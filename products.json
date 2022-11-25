@@ -1,0 +1,18 @@
+[
+    {
+        "category_name": "Skirt",
+        "thumbnail": "",
+        "products": [
+            {
+                "id": "1",
+                "product_name": "waist Mini Skirt",
+                "resale_price": "36",
+                "original_price": "19",
+                "location": "Narsingdi",
+                "years_of_use": "1",
+                "seller_name": "John doe",
+                "verified": false
+            }
+        ]
+    }
+]
