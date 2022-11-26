@@ -84,6 +84,47 @@ async function run() {
             const user = await userCollection.deleteOne(query);
             res.send(user);
         })
+
+        //edit all users
+        app.put('/users/admin/:id', async (req, res) => {
+            // const decodedEmail = req.decoded.email;
+            // // const query = { email: decodedEmail };
+
+            // const query = { email: decodedEmail };
+            // const user = await userCollections.findOne(query);
+
+            // if (user.role !== 'admin') {
+            //     return res.status(403).send({ message: 'forbidden access' })
+            // }
+
+
+
+            const id = req.params.id;
+
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            };
+
+
+            const result = await userCollection.updateOne(filter, updatedDoc, options);
+
+            res.send(result);
+        });
+
+        //get the admin data
+
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+
+            const query = { email };
+            const user = await userCollection.findOne(query);
+            res.send({ isAdmin: user?.role === 'admin' });
+
+        })
         //get the seller data
         app.get('/users/seller/:email', async (req, res) => {
             const email = req.params.email;
@@ -102,6 +143,13 @@ async function run() {
             const user = await userCollection.findOne(query);
             res.send({ isBuyer: user?.userType === 'buyer' });
 
+        })
+
+        //add product
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
+            res.send(result);
         })
     }
     finally {
