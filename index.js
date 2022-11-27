@@ -33,6 +33,8 @@ async function run() {
 
     const userCollection = client.db('vendorStore').collection('users');
 
+    const bookingCollection = client.db('vendorStore').collection('bookings');
+
     try {
 
         //jwt token
@@ -169,6 +171,40 @@ async function run() {
 
             res.send(category);
         })
+
+        //add booking data
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body;
+            const result = await bookingCollection.insertOne(booking);
+            res.send(result);
+        })
+
+        //get all booking data
+        app.get('/bookings', async (req, res) => {
+            const email = req.query.email;
+            let query = {};
+
+            if (email) {
+                query = {
+                    email: email
+                }
+            }
+
+            const bookings = await bookingCollection.find(query).toArray();
+            res.send(bookings);
+
+
+        });
+
+        // delete the individual booking
+        app.delete('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const booking = await bookingCollection.deleteOne(query);
+            res.send(booking);
+
+        })
+
     }
     finally {
 
