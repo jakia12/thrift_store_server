@@ -34,6 +34,9 @@ async function run() {
     const userCollection = client.db('vendorStore').collection('users');
 
     const bookingCollection = client.db('vendorStore').collection('bookings');
+    const advertisedCollection = client.db('vendorStore').collection('advertisedProducts');
+
+    const reportedCollection = client.db('vendorStore').collection('reportedProducts');
 
     try {
 
@@ -117,6 +120,36 @@ async function run() {
             res.send(result);
         });
 
+        //verify a seller
+        app.put('/users/verified/:id', async (req, res) => {
+            // const decodedEmail = req.decoded.email;
+            // // const query = { email: decodedEmail };
+
+            // const query = { email: decodedEmail };
+            // const user = await userCollections.findOne(query);
+
+            // if (user.role !== 'admin') {
+            //     return res.status(403).send({ message: 'forbidden access' })
+            // }
+
+
+
+            const id = req.params.id;
+
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    verificationStatus: 'Verified'
+                }
+            };
+
+
+            const result = await userCollection.updateOne(filter, updatedDoc, options);
+
+            res.send(result);
+        });
+
         //get the admin data
 
         app.get('/users/admin/:email', async (req, res) => {
@@ -161,6 +194,13 @@ async function run() {
             res.send(products);
         });
 
+        app.delete('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const product = await productCollection.deleteOne(query);
+            res.send(product);
+        })
+
         //get single category by id
 
         app.get('/products/:categoryId', async (req, res) => {
@@ -202,6 +242,45 @@ async function run() {
             const query = { _id: ObjectId(id) };
             const booking = await bookingCollection.deleteOne(query);
             res.send(booking);
+
+
+        })
+
+        //receive the advertised data 
+        app.post('/advertisedProducts', async (req, res) => {
+            const product = req.body;
+            const result = await advertisedCollection.insertOne(product);
+            res.send(result);
+        })
+
+        //get the advertised data
+        app.get('/advertisedProducts', async (req, res) => {
+            const query = {};
+            const products = await advertisedCollection.find(query).toArray();
+            res.send(products);
+        });
+
+        //receive the reported items
+        app.post('/reportedProducts', async (req, res) => {
+            const product = req.body;
+            const result = await reportedCollection.insertOne(product);
+            res.send(result);
+        })
+
+        //get the reported products
+        app.get('/reportedProducts', async (req, res) => {
+            const query = {};
+            const products = await reportedCollection.find(query).toArray();
+            res.send(products);
+        });
+
+        // delete the reported products
+        app.delete('/reportedProducts/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const reportedProduct = await reportedCollection.deleteOne(query);
+            res.send(reportedProduct);
+
 
         })
 
