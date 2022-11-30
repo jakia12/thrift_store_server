@@ -28,6 +28,30 @@ const client = new MongoClient(process.env.MONGO_URI, { useNewUrlParser: true, u
 //     client.close();
 // });
 
+function verifyJWT(req, res, next) {
+    //console.log(req.headers.authorization);
+    const authHeader = req.headers.authorization;
+    console.log(authHeader);
+
+    if (!authHeader) {
+        return res.status(401).send('unauthorized user')
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        console.log({ err, decoded });
+        if (err) {
+            return res.status(403).send({ message: 'forbidden access' });
+        }
+
+        req.decoded = decoded;
+        next()
+    });
+}
+
+
+
 async function run() {
     const productCollection = client.db("vendorStore").collection('products');
 
@@ -38,28 +62,11 @@ async function run() {
 
     const reportedCollection = client.db('vendorStore').collection('reportedProducts');
 
+
+
+
     try {
 
-        //jwt token
-        // app.get('/jwt', async (req, res) => {
-        //     const email = req.query.email;
-        //     const query = {
-        //         email: email
-        //     };
-
-        //     const user = await userCollection.findOne(query);
-        //     console.log(user);
-
-        //     if (user) {
-        //         const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1d' });
-
-        //         console.log(token);
-        //         res.send({ accessToken: token })
-        //     };
-
-        //     res.status(403).send({ accessToken: '' })
-
-        // })
 
         app.post('/users', async (req, res) => {
             const user = req.body;
@@ -189,7 +196,23 @@ async function run() {
 
         //get all the products
         app.get('/products', async (req, res) => {
-            const query = {};
+            const sellerEmail = req.query.sellerEmail;
+
+
+            // const decodedEmail = req.decoded.email;
+
+            // if (email !== decodedEmail) {
+            //     return res.status(403).send({ message: 'forbidden access' });
+            // }
+
+            let query = {};
+
+            if (sellerEmail) {
+                query = {
+                    sellerEmail: sellerEmail
+                }
+            }
+
             const products = await productCollection.find(query).toArray();
             res.send(products);
         });
@@ -220,8 +243,16 @@ async function run() {
         })
 
         //get all booking data
-        app.get('/bookings', async (req, res) => {
+        app.get('/bookings', verifyJWT, async (req, res) => {
             const email = req.query.email;
+
+
+            const decodedEmail = req.decoded.email;
+
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+
             let query = {};
 
             if (email) {
@@ -281,6 +312,28 @@ async function run() {
             const reportedProduct = await reportedCollection.deleteOne(query);
             res.send(reportedProduct);
 
+
+        })
+
+
+        // jwt token
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = {
+                email: email
+            };
+
+            const user = await userCollection.findOne(query);
+            console.log(user);
+
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1d' });
+
+                console.log(token);
+                return res.send({ accessToken: token })
+            };
+
+            res.status(403).send({ accessToken: '' })
 
         })
 
