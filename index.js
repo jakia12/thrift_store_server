@@ -17,7 +17,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 //require jwt
-const jwt = require('jsonwebtoken');
+var jwt = require('jsonwebtoken');
 
 const client = new MongoClient(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
@@ -62,7 +62,7 @@ async function run() {
 
     const reportedCollection = client.db('vendorStore').collection('reportedProducts');
 
-
+    const verifiedSellerCollections = client.db('vendorStore').collection('verifiedSellers');
 
 
     try {
@@ -133,13 +133,11 @@ async function run() {
             // // const query = { email: decodedEmail };
 
             // const query = { email: decodedEmail };
-            // const user = await userCollections.findOne(query);
+            // const user = await userCollection.findOne(query);
 
             // if (user.role !== 'admin') {
             //     return res.status(403).send({ message: 'forbidden access' })
             // }
-
-
 
             const id = req.params.id;
 
@@ -187,12 +185,28 @@ async function run() {
 
         });
 
+        //verify a seller
+        app.post('/users/verifiedSellers', async (req, res) => {
+            const verifiedSeller = req.body;
+            const result = await verifiedSellerCollections.insertOne(verifiedSeller);
+            res.send(result);
+        });
+
+        // get all verified sellers
+        app.get('/users/verifiedSellers', async (req, res) => {
+            const query = {};
+            const verifiedSellers = await verifiedSellerCollections.find(query).toArray();
+            res.send(verifiedSellers);
+        });
+
         //add product
         app.post('/products', async (req, res) => {
             const product = req.body;
             const result = await productCollection.insertOne(product);
+            console.log(result);
             res.send(result);
         });
+
 
         //get all the products
         app.get('/products', async (req, res) => {
@@ -217,6 +231,24 @@ async function run() {
             res.send(products);
         });
 
+        //update product to advertise 
+        app.put('/advertiseProducts/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    isAdvertised: true
+                }
+            };
+
+            const result = await productCollection.updateOne(filter, updatedDoc, options);
+
+            res.send(result);
+        })
+
+
+        //delete individual product
         app.delete('/products/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -265,6 +297,14 @@ async function run() {
             res.send(bookings);
 
 
+        });
+
+        //get single booking 
+        app.get('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const booking = await bookingCollection.findOne(query);
+            res.send(booking);
         });
 
         // delete the individual booking
